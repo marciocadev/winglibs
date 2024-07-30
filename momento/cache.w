@@ -2,6 +2,7 @@ bring cloud;
 bring sim;
 bring util;
 bring tf;
+bring "./provider.w" as momento;
 
 pub struct CacheProps {
   /// A secret containing the Momento API key to use for accessing
@@ -23,6 +24,8 @@ pub interface ICache {
 
   /// Set a value in the cache.
   inflight set(key: str, value: str, opts: CacheSetOptions?): void;
+
+  cache_name(): str;
 }
 
 pub struct CacheGetOptions {}
@@ -50,6 +53,8 @@ pub class Cache {
     }
   }
 
+  pub cache_name(): str { return this.inner.cache_name(); }
+
   pub inflight get(key: str): str? {
     return this.inner.get(key);
   }
@@ -73,8 +78,10 @@ class Cache_tf impl ICache {
     });
 
     // Ensure a provider is available.
-    MomentoProvider.getOrCreate(this);
+    momento.MomentoProvider.getOrCreate(this);
   }
+
+  pub cache_name(): str { return this.name; }
 
   extern "./cache.ts" static inflight _get(token: str, cacheName: str, key: str): str?;
   extern "./cache.ts" static inflight _set(token: str, cacheName: str, key: str, value: str, ttl: num): void;
@@ -130,6 +137,8 @@ class Cache_sim impl ICache {
     });
   }
 
+  pub cache_name(): str { return this.name; }
+
   pub inflight get(key: str): str? {
     let response = this.backend.call("get", [Json key]);
     return response.tryAsStr();
@@ -139,25 +148,5 @@ class Cache_sim impl ICache {
     this.backend.call("set", [Json key, Json value, Json {
       ttl: opts?.ttl?.seconds,
     }]);
-  }
-}
-
-class MomentoProvider {
-  pub static getOrCreate(scope: std.IResource): tf.Provider {
-    let root = nodeof(scope).root;
-    let singletonKey = "MomentoProvider";
-    let existing = nodeof(root).tryFindChild(singletonKey);
-    if existing != nil {
-      return unsafeCast(existing);
-    }
-
-    return new tf.Provider(
-      name: "momento",
-      source: "momentohq/momento",
-      version: "0.1.0",
-      attributes: {
-        api_key: util.env("MOMENTO_API_KEY"),
-      }
-    ) as singletonKey in root;
   }
 }
