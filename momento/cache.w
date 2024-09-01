@@ -46,7 +46,7 @@ pub class Cache {
     let defaultTtl = props.defaultTtl ?? 60s;
     if target.startsWith("tf") {
       this.inner = new Cache_tf({ token, name, defaultTtl });
-    } elif target == "sim" {
+    } else if target == "sim" {
       this.inner = new Cache_sim({ token, name, defaultTtl });
     } else {
       throw "unsupported target: " + target;

@@ -8,14 +8,15 @@ exports.Platform = class {
     const app = new cdk8s.App({ outdir: props.outdir });
 
     const labels = process.env.WING_K8S_LABELS ? JSON.parse(process.env.WING_K8S_LABELS) : {};
-    const chart = new cdk8s.Chart(app, "Chart", { labels });
+    const namespace = process.env.WING_K8S_NAMESPACE;
+    const chart = new cdk8s.Chart(app, "Default", { labels, namespace });
 
     class App extends core.App {
       _target = "cdk8s";
       outdir = props.outdir;
 
       constructor() {
-        super(chart, "App", props);
+        super(chart, "Default", props);
 
         const root = this.node.root;
         root.new = (fqn, ctor, scope, id, ...args) => this.new(fqn, ctor, scope, id, ...args);
